@@ -6,7 +6,7 @@ def read(fname):
 
 setup(name="quickedit",
       scripts=['quickedit'],
-      version='0.1.0',
+      version='0.2.0',
       maintainer="Ricardo Band",
       maintainer_email="quickedit@makesyouhappy.org",
       description="Change your Quick-launch icons easily.",

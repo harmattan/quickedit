@@ -1,11 +1,11 @@
 [Project]
-category = Development
+category = System
 maintainer = Ricardo Band
 appname = QuickEdit
-section = development
+section = system
 pyversion = 2.6
 project = quickedit
 template = harmattan
-email = quickedit@makesyouhappy.org
+email = quickedit@xengi.de
 desc = Change your Quck-launch icons easily.
 

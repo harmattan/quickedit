@@ -25,13 +25,13 @@ class AppWrapper(QtCore.QObject):
         self._app = app
  
     def _name(self):
-        return str(self._app)
+        return str(self._app.name)
 
     def _icon(self):
         return str(self._app.icon)
 
     changed = QtCore.Signal()
- 
+
     name = QtCore.Property(unicode, _name, notify=changed)
     icon = QtCore.Property(unicode, _icon, notify=changed)
 
@@ -80,7 +80,7 @@ class App(object):
         self.name = name
         self.icon = icon
         self.desktopfile = desktopfile
- 
+
     def __str__(self):
         return self.name
 

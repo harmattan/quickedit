@@ -24,13 +24,21 @@ Page
         anchors.left: parent.left
         anchors.bottom: quicklaunch.top
 
+        property int quickclicked: 0
+
         Component
         {
             id: appDelegate
-            Item
+
+            Rectangle
             {
+                id: appBg
                 width: 120
                 height: 140
+                color: "transparent"
+                border.color: "transparent"
+                border.width: 5
+                radius: 10
 
                 Image
                 {
@@ -46,9 +54,9 @@ Page
                         onClicked:
                         {
                             controller.appSelected(model.app)
-                            // if quick then delete note; mark quick
-                            // if app then update marked quick; unmark quick
                             helpText.visible = false
+                            if(appBg.color == "transparent") { appBg.color = "cyan" }
+                            else { appBg.color = "transparent" }
                         }
                     }
                 }
@@ -103,6 +111,7 @@ Page
 
         GridView
         {
+            id: quicklaunch
             anchors.fill: parent
             cellWidth: 120
             cellHeight: 154
