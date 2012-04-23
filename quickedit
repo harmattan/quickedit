@@ -1,0 +1,197 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# me@xengi.de   2007-11-26
+
+"""
+You can use QuickEdit to change the Quick-launch icons on the bottom when
+you swipe half the way up the screen from any app. Just start the app, click on
+the Quick-launch icon you want to change and then on the new app. That's all!
+Further information: http://xengi.de/quickedit 
+"""
+
+__usage__ = "usage: %prog [--help]"
+__version__ = "toggle [xengi.de 2007-11-26]"
+
+import sys,os,errno
+from PySide import QtCore
+from PySide import QtGui
+from PySide import QtDeclarative
+from PySide import QtOpenGL
+
+class AppWrapper(QtCore.QObject):
+    def __init__(self, app):
+        QtCore.QObject.__init__(self)
+        self._app = app
+ 
+    def _name(self):
+        return str(self._app)
+
+    def _icon(self):
+        return str(self._app.icon)
+
+    changed = QtCore.Signal()
+ 
+    name = QtCore.Property(unicode, _name, notify=changed)
+    icon = QtCore.Property(unicode, _icon, notify=changed)
+
+class AppListModel(QtCore.QAbstractListModel):
+    COLUMNS = ('app',)
+ 
+    def __init__(self, apps):
+        QtCore.QAbstractListModel.__init__(self)
+        self._apps = apps
+        self.setRoleNames(dict(enumerate(AppListModel.COLUMNS)))
+ 
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        return len(self._apps)
+ 
+    def data(self, index, role):
+        if index.isValid() and role == AppListModel.COLUMNS.index('app'):
+            return self._apps[index.row()]
+        return None
+
+class Controller(QtCore.QObject):
+    @QtCore.Slot(QtCore.QObject)
+    def appSelected(self, wrapper):
+        global qlSelected
+        global quickList
+        if "quicklaunch" in wrapper._app.desktopfile:
+            qlSelected = wrapper._app.desktopfile[51:52]
+            print "quicklaunch pressed", wrapper._app.desktopfile[51:52]
+        else:
+            print "app pressed", wrapper._app.name
+            if qlSelected >= 0:
+                try:
+                    os.symlink(wrapper._app.desktopfile, "/home/user/.local/share/applications/quicklaunchbar" + qlSelected + ".desktop")
+                    print "quick-launch", qlSelected, "updated"
+                except OSError, e:
+                    if e.errno == errno.EEXIST:
+                        os.remove("/home/user/.local/share/applications/quicklaunchbar" + qlSelected + ".desktop")
+                        os.symlink(wrapper._app.desktopfile, "/home/user/.local/share/applications/quicklaunchbar" + qlSelected + ".desktop")
+                        print "quick-launch", qlSelected, "force updated"
+                qlSelected = -1
+                # update quick launch
+                rc = view.rootContext()
+                rc.setContextProperty('quickListModel', AppListModel(updateQuickLaunch()))
+
+class App(object):
+    def __init__(self, name, icon, desktopfile):
+        self.name = name
+        self.icon = icon
+        self.desktopfile = desktopfile
+ 
+    def __str__(self):
+        return self.name
+
+def updateQuickLaunch():
+    quicklist = []
+    quickdirlist = ["/home/user/.local/share/applications/quicklaunchbar0.desktop",
+                    "/home/user/.local/share/applications/quicklaunchbar1.desktop",
+                    "/home/user/.local/share/applications/quicklaunchbar2.desktop",
+                    "/home/user/.local/share/applications/quicklaunchbar3.desktop"]
+    for filename in quickdirlist:
+        f = file(filename)
+        lines = f.readlines()
+        appname = ""
+        appicon = ""
+        for line in lines:
+            line = line.rstrip()
+            if ( line.startswith("Name=") ) and ( appname == "" ):
+                appname = line[5:]
+            if line.startswith("Icon="):
+                if "/" in line:
+                    appicon = line[5:]
+                else:
+                    appicon = "/usr/share/themes/blanco/meegotouch/icons/" + line[5:] + ".png"
+                    if not os.path.isfile(appicon):
+                        appicon = "/usr/share/themes/base/meegotouch/icons/" + line[5:] + ".svg"
+                        if not os.path.isfile(appicon):
+                            appicon = "/usr/share/icons/hicolor/64x64/apps/" + line[5:] + ".png"
+        if ( appname != "" ) and ( appicon != "" ):
+            quicklist.append(App(appname, appicon, filename))
+
+    return [AppWrapper(app) for app in quicklist]
+
+if __name__ == "__main__":
+    qapp = QtGui.QApplication(sys.argv)
+    view = QtDeclarative.QDeclarativeView()
+    glw = QtOpenGL.QGLWidget()
+    view.setViewport(glw)
+
+    applist = []
+
+    path = "/usr/share/applications/"
+    dirList = os.listdir(path)
+    for filename in dirList:
+        if ( filename.endswith(".desktop") ) and ( not os.path.islink(path + filename) ):
+            f = file(path + filename)
+            lines = f.readlines()
+            appname = ""
+            appicon = ""
+            show = True
+            for line in lines:
+                line = line.rstrip()
+                if ( line.startswith("Name=") ) and ( appname == "" ):
+                    appname = line[5:]
+                if line.startswith("Icon="):
+                    if "/" in line:
+                        appicon = line[5:]
+                    else:
+                        appicon = "/usr/share/themes/blanco/meegotouch/icons/" + line[5:] + ".png"
+                        if not os.path.isfile(appicon):
+                            appicon = "/usr/share/themes/base/meegotouch/icons/" + line[5:] + ".svg"
+                            if not os.path.isfile(appicon):
+                                appicon = "/usr/share/icons/hicolor/64x64/apps/" + line[5:] + ".png"
+                if line.startswith("NotShowIn=X-MeeGo"):
+                    show = False
+            if ( appname != "" ) and ( appicon != "" ) and show:
+                applist.append(App(appname, appicon, path + filename))
+
+    path = "/var/lib/apt-desktop/entries/"
+    dirList = os.listdir(path)
+    for filename in dirList:
+        if not os.path.islink(path + filename):
+            f = file(path + filename)
+            lines = f.readlines()
+            appname = ""
+            appicon = ""
+            show = True
+            for line in lines:
+                line = line.rstrip()
+                if ( line.startswith("Name=") ) and ( appname == "" ):
+                    appname = line[5:]
+                if line.startswith("Icon="):
+                    if "/" in line:
+                        appicon = line[5:]
+                    else:
+                        appicon = "/usr/share/themes/blanco/meegotouch/icons/" + line[5:] + ".png"
+                        if not os.path.isfile(appicon):
+                            appicon = "/usr/share/themes/base/meegotouch/icons/" + line[5:] + ".svg"
+                            if not os.path.isfile(appicon):
+                                appicon = "/usr/share/icons/hicolor/64x64/apps/" + line[5:] + ".png"
+                if line.startswith("NotShowIn=X-MeeGo"):
+                    show = False
+            if ( appname != "" ) and ( appicon != "" ) and ( show ):
+                applist.append(App(appname, appicon, path + filename))
+
+    apps = [AppWrapper(app) for app in applist]
+
+    controller = Controller()
+    appList = AppListModel(apps)
+    quickList = AppListModel(updateQuickLaunch())
+    qlSelected = -1
+
+    rc = view.rootContext()
+ 
+    rc.setContextProperty('controller', controller)
+    rc.setContextProperty('appListModel', appList)
+    rc.setContextProperty('quickListModel', quickList)
+
+    if os.path.exists('/usr/share/quickedit/qml'):
+        view.setSource('/usr/share/quickedit/qml/main.qml')
+    else:
+        view.setSource(os.path.join('qml','main.qml'))
+
+    view.showFullScreen()
+    qapp.exec_()
