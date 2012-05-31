@@ -7,5 +7,5 @@ pyversion = 2.6
 project = quickedit
 template = harmattan
 email = quickedit@xengi.de
-desc = Change your Quck-launch icons easily.
+desc = Change your Quick-launch icons easily.
 

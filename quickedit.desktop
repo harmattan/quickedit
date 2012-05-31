@@ -3,6 +3,6 @@ Encoding=UTF-8
 Version=1.0
 Type=Application
 Name=QuickEdit
-Exec=invoker --single-instance --type=e /usr/bin/quickedit
+Exec=invoker --single-instance --type=e /opt/quickedit/bin/quickedit
 Icon=/usr/share/icons/hicolor/64x64/apps/quickedit.png
-Categories=Development;
+Categories=System;

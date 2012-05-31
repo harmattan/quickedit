@@ -55,8 +55,13 @@ Page
                         {
                             controller.appSelected(model.app)
                             helpText.visible = false
-                            if(appBg.color == "transparent") { appBg.color = "cyan" }
-                            else { appBg.color = "transparent" }
+                            print(quicklaunchGrid.contentItem.children.length)
+                            for (var i = 0; i < quicklaunchGrid.contentItem.children.length; i++)
+                            {
+                                var child = quicklaunchGrid.contentItem.children[i];
+                                child.appBg.color = "black";
+                            }
+                            if(model.app.isQL == "1") { appBg.color = "cyan" }
                         }
                     }
                 }
@@ -111,7 +116,7 @@ Page
 
         GridView
         {
-            id: quicklaunch
+            id: quicklaunchGrid
             anchors.fill: parent
             cellWidth: 120
             cellHeight: 154

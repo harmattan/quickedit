@@ -6,11 +6,11 @@ def read(fname):
 
 setup(name="quickedit",
       scripts=['quickedit'],
-      version='0.2.0',
+      version='0.99.9',
       maintainer="Ricardo Band",
-      maintainer_email="quickedit@makesyouhappy.org",
+      maintainer_email="quickedit@xengi.de",
       description="Change your Quick-launch icons easily.",
       long_description=read('quickedit.longdesc'),
       data_files=[('share/applications',['quickedit.desktop']),
                   ('share/icons/hicolor/64x64/apps', ['quickedit.png']),
-                  ('share/quickedit/qml', glob.glob('qml/*.qml')), ],)
+                  ('/opt/quickedit/qml', glob.glob('qml/*.qml')), ],)

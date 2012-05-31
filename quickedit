@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# me@xengi.de   2007-11-26
+# me@xengi.de   2012-04-25
 
 """
 You can use QuickEdit to change the Quick-launch icons on the bottom when
@@ -11,7 +11,7 @@ Further information: http://xengi.de/quickedit
 """
 
 __usage__ = "usage: %prog [--help]"
-__version__ = "toggle [xengi.de 2007-11-26]"
+__version__ = "toggle [xengi.de 2012-04-25]"
 
 import sys,os,errno
 from PySide import QtCore
@@ -30,10 +30,14 @@ class AppWrapper(QtCore.QObject):
     def _icon(self):
         return str(self._app.icon)
 
+    def _isQL(self):
+        return str(self._app.isQL)
+
     changed = QtCore.Signal()
 
     name = QtCore.Property(unicode, _name, notify=changed)
     icon = QtCore.Property(unicode, _icon, notify=changed)
+    isQL = QtCore.Property(unicode, _isQL, notify=changed)
 
 class AppListModel(QtCore.QAbstractListModel):
     COLUMNS = ('app',)
@@ -57,6 +61,9 @@ class Controller(QtCore.QObject):
         global qlSelected
         global quickList
         if "quicklaunch" in wrapper._app.desktopfile:
+#            if qlSelected >= 0:
+#                rc = view.rootContext()
+#                rc.setContextProperty('quickListModel', AppListModel(updateQuickLaunch()))
             qlSelected = wrapper._app.desktopfile[51:52]
             print "quicklaunch pressed", wrapper._app.desktopfile[51:52]
         else:
@@ -76,9 +83,10 @@ class Controller(QtCore.QObject):
                 rc.setContextProperty('quickListModel', AppListModel(updateQuickLaunch()))
 
 class App(object):
-    def __init__(self, name, icon, desktopfile):
+    def __init__(self, name, icon, isQL, desktopfile):
         self.name = name
         self.icon = icon
+        self.isQL = isQL
         self.desktopfile = desktopfile
 
     def __str__(self):
@@ -90,6 +98,19 @@ def updateQuickLaunch():
                     "/home/user/.local/share/applications/quicklaunchbar1.desktop",
                     "/home/user/.local/share/applications/quicklaunchbar2.desktop",
                     "/home/user/.local/share/applications/quicklaunchbar3.desktop"]
+
+    # check if quick-launch links are broken
+    for filename in quickdirlist:
+        if not os.path.exists(os.readlink(filename)):
+            # replace broken links with standard browser
+            try:
+                os.symlink("/usr/share/applications/browser.desktop", filename)
+            except OSError, e:
+                if e.errno == errno.EEXIST:
+                    os.remove(filename)
+                    os.symlink("/usr/share/applications/browser.desktop", filename)
+            print "Broken quick-launch icon fixed!"
+
     for filename in quickdirlist:
         f = file(filename)
         lines = f.readlines()
@@ -109,7 +130,7 @@ def updateQuickLaunch():
                         if not os.path.isfile(appicon):
                             appicon = "/usr/share/icons/hicolor/64x64/apps/" + line[5:] + ".png"
         if ( appname != "" ) and ( appicon != "" ):
-            quicklist.append(App(appname, appicon, filename))
+            quicklist.append(App(appname, appicon, "1", filename))
 
     return [AppWrapper(app) for app in quicklist]
 
@@ -146,7 +167,7 @@ if __name__ == "__main__":
                 if line.startswith("NotShowIn=X-MeeGo"):
                     show = False
             if ( appname != "" ) and ( appicon != "" ) and show:
-                applist.append(App(appname, appicon, path + filename))
+                applist.append(App(appname, appicon, "0", path + filename))
 
     path = "/var/lib/apt-desktop/entries/"
     dirList = os.listdir(path)
@@ -172,8 +193,8 @@ if __name__ == "__main__":
                                 appicon = "/usr/share/icons/hicolor/64x64/apps/" + line[5:] + ".png"
                 if line.startswith("NotShowIn=X-MeeGo"):
                     show = False
-            if ( appname != "" ) and ( appicon != "" ) and ( show ):
-                applist.append(App(appname, appicon, path + filename))
+            if ( appname != "" ) and ( appicon != "" ) and show:
+                applist.append(App(appname, appicon, "0", path + filename))
 
     apps = [AppWrapper(app) for app in applist]
 
@@ -188,8 +209,8 @@ if __name__ == "__main__":
     rc.setContextProperty('appListModel', appList)
     rc.setContextProperty('quickListModel', quickList)
 
-    if os.path.exists('/usr/share/quickedit/qml'):
-        view.setSource('/usr/share/quickedit/qml/main.qml')
+    if os.path.exists('/home/user/MyDocs/Dropbox/qe/qml'):
+        view.setSource('/home/user/MyDocs/Dropbox/qe/qml/main.qml')
     else:
         view.setSource(os.path.join('qml','main.qml'))
 
