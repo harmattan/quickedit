@@ -35,7 +35,7 @@ Page
                     {
                         controller.appSelected(model.app)
                         helpText.visible = false
-                        appBg.color = "cyan"
+                        //appBg.color = "cyan"
                     }
                 }
             }
