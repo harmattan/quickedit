@@ -13,7 +13,7 @@ Further information: http://xengi.de/quickedit
 __usage__ = "usage: %prog [--help]"
 __version__ = "toggle [xengi.de 2012-04-25]"
 
-import sys,os,errno
+import sys,os,errno,fileinput
 from PySide import QtCore
 from PySide import QtGui
 from PySide import QtDeclarative
@@ -110,6 +110,18 @@ def updateQuickLaunch():
                     os.remove(filename)
                     os.symlink("/usr/share/applications/browser.desktop", filename)
             print "Broken quick-launch icon fixed!"
+    # check if an app of the quicklaunch was uninstalled and fix it
+    reboot = false
+    file = fileinput.input("/home/user/.config/meegotouchhome-nokia/launcherbuttons.data", inplace=1)
+    for line in file:
+        if line.startswith("home/user/.local/share/applications/quicklaunchbar"):
+            if not line.endswith("=quicklaunchbar/" + line[50:51]):
+                line.replace(line, line[:60] + "quicklaunchbar/" + line[50:51])
+                print line
+                reboot = true
+    file.close()
+    if reboot:
+        print "Your need to reboot to repair your quick-launch."
 
     for filename in quickdirlist:
         f = file(filename)
